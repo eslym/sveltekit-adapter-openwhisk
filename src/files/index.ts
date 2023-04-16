@@ -136,19 +136,19 @@ async function handleStatic(
     const data = await readFile(fullPath);
     const type = (lookup(path) as string | undefined) ?? 'application/octet-stream';
     const resHeaders: Record<string, string> = {
-        'Content-Type': type
+        'content-type': type
     };
 
     // set last modified
-    resHeaders['Last-Modified'] = stat.mtime.toUTCString();
+    resHeaders['last-modified'] = stat.mtime.toUTCString();
 
     // calculate etag with sha1
     const hash = crypto.createHash('sha1');
     hash.update(data);
-    resHeaders['ETag'] = hash.digest('hex');
+    resHeaders['etag'] = hash.digest('hex');
 
     // compare etag
-    if (reqHeaders['if-none-match'] === resHeaders['ETag']) {
+    if (reqHeaders['if-none-match'] === resHeaders['etag']) {
         return {
             statusCode: 304,
             headers: resHeaders
@@ -156,9 +156,9 @@ async function handleStatic(
     }
 
     if (immutable && path.startsWith(`/${manifest.appPath}/immutable/`)) {
-        resHeaders['Cache-Control'] = 'public, max-age=31536000, immutable';
+        resHeaders['cache-control'] = 'public, max-age=31536000, immutable';
     } else {
-        resHeaders['Cache-Control'] = 'public, max-age=3600';
+        resHeaders['cache-control'] = 'public, max-age=3600';
     }
 
     return {
