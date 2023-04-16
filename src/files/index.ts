@@ -34,7 +34,6 @@ interface ActionResponse {
 }
 
 const server = new Server(manifest);
-server.init({ env: process.env });
 const dir = dirname(fileURLToPath(import.meta.url));
 
 const methodWitoutBody = new Set(['GET', 'HEAD']);
@@ -58,17 +57,19 @@ const handlers = [
 ];
 
 export async function main(args: OpenWhiskRequest): Promise<OpenWhiskResponse> {
+    await server.init({ env: process.env });
     const url = new URL(args.__ow_path, BASE_URL);
-    if(DEBUG){
-        console.log(url);
+    if (DEBUG) {
+        console.log('args', args);
+        console.log('url', url);
     }
     url.search = args.__ow_query;
     for (const handler of handlers) {
         const res = await handler(url, args);
         if (res) {
+            const ct = res.headers?.['content-type']?.split(';')?.[0]?.trim() ?? '';
             const body =
-                res.headers?.['content-type']?.startsWith('text/') ||
-                extraPlainText.has(res.headers?.['content-type'])
+                ct.startsWith('text/') || extraPlainText.has(ct)
                     ? res.body.toString('utf-8')
                     : res.body.toString('base64');
             return {
