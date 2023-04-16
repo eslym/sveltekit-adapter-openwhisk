@@ -7,23 +7,56 @@ import { fileURLToPath } from 'node:url';
 import { rollup } from 'rollup';
 
 interface AdapterOptions {
+    /**
+     * output directory, default: build
+     */
     out?: string;
-    base_url: string;
+    /**
+     * base url of the website, it will trying to get from BASE_URL environment variable during runtime when not set.
+     */
+    baseUrl?: string;
+
+    /**
+     * whether to log some debug info, it will trying to get from DEBUG environment variable during runtime when not set.
+     * default: false
+     */
     debug?: boolean;
-    ip_header?: string;
+    /**
+     * header to get user's ip, it will trying to get from IP_HEADER environment variable during runtime when not set.
+     * default: 'x-forwarded-proto'
+     */
+    ipHeader?: string;
+
+    /**
+     * precompress, default: false
+     */
     precompress?: boolean;
+    /**
+     * whether to include polyfill for nodejs, default: true
+     */
     polyfill?: boolean;
+    
+    /**
+     * whether to include polyfill for nodejs, default: ''
+     */
+    envPrefix?: string;
 }
 
 const files = fileURLToPath(new URL('./files', import.meta.url).href);
 
+function stringifyOrDefault(value: any, script: string) {
+    return value ? JSON.stringify(value) : script;
+}
+
 export default function adapter(options: AdapterOptions): Adapter {
     const {
         out = 'build',
-        base_url,
+        baseUrl,
         precompress = false,
         polyfill = true,
-        ip_header = 'x-forwarded-for'
+        ipHeader,
+        envPrefix = '',
+        debug
     } = options;
     return {
         name: '@eslym/sveltekit-adapter-openwhisk',
@@ -94,9 +127,12 @@ export default function adapter(options: AdapterOptions): Adapter {
                     MANIFEST: './server/manifest.js',
                     SERVER: './server/index.js',
                     SHIMS: './shims.js',
-                    BASE_URL: JSON.stringify(base_url),
-                    DEBUG: JSON.stringify(!!options.debug),
-                    IP_HEADER: JSON.stringify(ip_header)
+                    BASE_URL: stringifyOrDefault(baseUrl, `process.env[${JSON.stringify(envPrefix + 'BASE_URL')}]`),
+                    DEBUG: stringifyOrDefault(debug, `process.env[${JSON.stringify(envPrefix + 'DEBUG')}] === 'true'`),
+                    IP_HEADER: stringifyOrDefault(
+                        ipHeader,
+                        `process.env[${JSON.stringify(envPrefix + 'IP_HEADER')}] ?? 'x-forwarded-for'`
+                    )
                 }
             });
 

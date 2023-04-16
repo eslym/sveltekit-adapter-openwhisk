@@ -57,10 +57,23 @@ const handlers = [
     handleSSR
 ];
 
+const baseUrl = BASE_URL;
+const ipHeader = IP_HEADER;
+const debug = DEBUG;
+
 export async function main(args: OpenWhiskRequest): Promise<OpenWhiskResponse> {
+    if (!baseUrl) {
+        return {
+            statusCode: 500,
+            headers: {
+                'content-type': 'text/plain'
+            },
+            body: 'BASE_URL is not set'
+        };
+    }
     await server.init({ env: process.env });
-    const url = new URL(args.__ow_path, BASE_URL);
-    if (DEBUG) {
+    const url = new URL(args.__ow_path, baseUrl);
+    if (debug) {
         console.log('args', args);
         console.log('url', url);
     }
@@ -73,7 +86,7 @@ export async function main(args: OpenWhiskRequest): Promise<OpenWhiskResponse> {
                 ct.startsWith('text/') || extraPlainText.has(ct)
                     ? res.body.toString('utf-8')
                     : res.body.toString('base64');
-            if (DEBUG) console.log('res', res);
+            if (debug) console.log('res', res);
             return {
                 ...res,
                 body
@@ -90,15 +103,6 @@ export async function main(args: OpenWhiskRequest): Promise<OpenWhiskResponse> {
 }
 
 async function handleSSR(url: URL, args: OpenWhiskRequest): Promise<ActionResponse> {
-    if (!BASE_URL) {
-        return {
-            statusCode: 500,
-            headers: {
-                'content-type': 'text/plain'
-            },
-            body: Buffer.from('base_url is not defined')
-        };
-    }
     const opts: RequestInit = {
         method: args.__ow_method,
         headers: args.__ow_headers
@@ -109,7 +113,7 @@ async function handleSSR(url: URL, args: OpenWhiskRequest): Promise<ActionRespon
     const request = new Request(url);
     const respond = await server.respond(request, {
         getClientAddress() {
-            return args.__ow_headers[IP_HEADER?.toLowerCase() ?? 'x-forwarded-for'] ?? '';
+            return args.__ow_headers[ipHeader] ?? '';
         }
     });
     return {
