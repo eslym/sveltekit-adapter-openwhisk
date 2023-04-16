@@ -96,7 +96,7 @@ async function handleSSR(url: URL, args: OpenWhiskRequest): Promise<ActionRespon
             headers: {
                 'content-type': 'text/plain'
             },
-            body: Buffer.from('ORIGIN is not defined')
+            body: Buffer.from('base_url is not defined')
         };
     }
     const opts: RequestInit = {
