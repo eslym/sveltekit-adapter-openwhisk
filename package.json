@@ -1,6 +1,6 @@
 {
     "name": "@eslym/sveltekit-adapter-openwhisk",
-    "version": "1.0.0-beta.6",
+    "version": "1.0.0-beta.7",
     "type": "module",
     "description": "SvelteKit adapter for OpenWhisk web action",
     "main": "dist/index.js",
