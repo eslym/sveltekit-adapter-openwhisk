@@ -48,17 +48,20 @@ const extraPlainText = new Set([
 ]);
 
 const handlers = [
-    async (args: OpenWhiskRequest) =>
-        handleStatic(args.__ow_path, 'client', args.__ow_headers, true),
-    async (args: OpenWhiskRequest) => handleStatic(args.__ow_path, 'static', args.__ow_headers),
+    async (url: URL, args: OpenWhiskRequest) =>
+        handleStatic(url.pathname, 'client', args.__ow_headers, true),
+    async (url: URL, args: OpenWhiskRequest) =>
+        handleStatic(url.pathname, 'static', args.__ow_headers),
     handlePrerendered,
     handleSSR
 ];
 
 export async function main(args: OpenWhiskRequest): Promise<OpenWhiskResponse> {
     if (!args.__ow_path.startsWith('/')) args.__ow_path = '/' + args.__ow_path;
+    const url = new URL(args.__ow_path, BASE_URL);
+    url.search = args.__ow_query;
     for (const handler of handlers) {
-        const res = await handler(args);
+        const res = await handler(url, args);
         if (res) {
             const body =
                 res.headers?.['content-type']?.startsWith('text/') ||
@@ -80,7 +83,7 @@ export async function main(args: OpenWhiskRequest): Promise<OpenWhiskResponse> {
     };
 }
 
-async function handleSSR(args: OpenWhiskRequest): Promise<ActionResponse> {
+async function handleSSR(url: URL, args: OpenWhiskRequest): Promise<ActionResponse> {
     if (!BASE_URL) {
         return {
             statusCode: 500,
@@ -90,8 +93,6 @@ async function handleSSR(args: OpenWhiskRequest): Promise<ActionResponse> {
             body: Buffer.from('ORIGIN is not defined')
         };
     }
-    const url = new URL(args.__ow_path, BASE_URL);
-    url.search = args.__ow_query;
     const opts: RequestInit = {
         method: args.__ow_method,
         headers: args.__ow_headers
@@ -161,10 +162,13 @@ async function handleStatic(
     };
 }
 
-async function handlePrerendered(args: OpenWhiskRequest): Promise<ActionResponse | undefined> {
+async function handlePrerendered(
+    url: URL,
+    args: OpenWhiskRequest
+): Promise<ActionResponse | undefined> {
     const headers = args.__ow_headers;
     try {
-        const path = decodeURIComponent(args.__ow_path);
+        const path = decodeURIComponent(url.pathname);
 
         if (prerendered.has(path)) {
             return handleStatic(path, 'prerendered', headers, false);
