@@ -57,7 +57,6 @@ const handlers = [
 ];
 
 export async function main(args: OpenWhiskRequest): Promise<OpenWhiskResponse> {
-    if (!args.__ow_path.startsWith('/')) args.__ow_path = '/' + args.__ow_path;
     const url = new URL(args.__ow_path, BASE_URL);
     url.search = args.__ow_query;
     for (const handler of handlers) {
