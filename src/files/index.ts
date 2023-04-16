@@ -10,6 +10,7 @@ import { lookup } from 'mrmime';
 
 declare global {
     const BASE_URL: string;
+    const DEBUG: boolean;
 }
 
 interface OpenWhiskRequest {
@@ -58,6 +59,9 @@ const handlers = [
 
 export async function main(args: OpenWhiskRequest): Promise<OpenWhiskResponse> {
     const url = new URL(args.__ow_path, BASE_URL);
+    if(DEBUG){
+        console.log(url);
+    }
     url.search = args.__ow_query;
     for (const handler of handlers) {
         const res = await handler(url, args);
