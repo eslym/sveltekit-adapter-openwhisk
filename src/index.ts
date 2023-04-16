@@ -10,6 +10,7 @@ interface AdapterOptions {
     out?: string;
     base_url: string;
     debug?: boolean;
+    ip_header?: string;
     precompress?: boolean;
     polyfill?: boolean;
 }
@@ -17,7 +18,13 @@ interface AdapterOptions {
 const files = fileURLToPath(new URL('./files', import.meta.url).href);
 
 export default function adapter(options: AdapterOptions): Adapter {
-    const { out = 'build', base_url, precompress = false, polyfill = true } = options;
+    const {
+        out = 'build',
+        base_url,
+        precompress = false,
+        polyfill = true,
+        ip_header = 'x-forwarded-for'
+    } = options;
     return {
         name: '@eslym/sveltekit-adapter-openwhisk',
         async adapt(builder) {
@@ -88,7 +95,8 @@ export default function adapter(options: AdapterOptions): Adapter {
                     SERVER: './server/index.js',
                     SHIMS: './shims.js',
                     BASE_URL: JSON.stringify(base_url),
-                    DEBUG: JSON.stringify(!!options.debug)
+                    DEBUG: JSON.stringify(!!options.debug),
+                    IP_HEADER: JSON.stringify(ip_header)
                 }
             });
 

@@ -11,6 +11,7 @@ import { lookup } from 'mrmime';
 declare global {
     const BASE_URL: string;
     const DEBUG: boolean;
+    const IP_HEADER: string;
 }
 
 interface OpenWhiskRequest {
@@ -72,6 +73,7 @@ export async function main(args: OpenWhiskRequest): Promise<OpenWhiskResponse> {
                 ct.startsWith('text/') || extraPlainText.has(ct)
                     ? res.body.toString('utf-8')
                     : res.body.toString('base64');
+            if (DEBUG) console.log('res', res);
             return {
                 ...res,
                 body
@@ -107,7 +109,7 @@ async function handleSSR(url: URL, args: OpenWhiskRequest): Promise<ActionRespon
     const request = new Request(url);
     const respond = await server.respond(request, {
         getClientAddress() {
-            return args.__ow_headers['x-forwarded-for'] ?? '';
+            return args.__ow_headers[IP_HEADER?.toLowerCase() ?? 'x-forwarded-for'] ?? '';
         }
     });
     return {
